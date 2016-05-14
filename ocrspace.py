@@ -6,10 +6,9 @@ class APIError(Exception):
 
 class OCRSpaceAPI(object):
 
-	def __init__(self, key):
+	def __init__(self, key, url='https://api.ocr.space/parse/image'):
 		self.key = key
-		self.url = 'https://api.ocr.space/parse/image'
-
+		self.url = url
 
 	def OCR_URL(self, url, overlay=False):
 		payload = {
