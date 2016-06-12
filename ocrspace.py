@@ -22,3 +22,14 @@ class OCRSpaceAPI(object):
 			raise APIError(result['ErrorMessage'])
 		return result
 
+	def OCR_file(self, fileobj, overlay=False):
+		payload = {
+			'isOverlayRequired': overlay,
+			'apikey': self.key,
+		}
+		r = requests.post(self.url, data=payload, files={'file': fileobj})
+		results = r.json()['ParsedResults']
+		if results[0]['ErrorMessage']:
+			raise APIError(results[0]['ErrorMessage'])
+		return results
+
