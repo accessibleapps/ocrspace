@@ -16,8 +16,9 @@ class OCRSpaceAPI(object):
 			'isOverlayRequired': overlay,
 			'apikey': self.key,
 		}
-		r = requests.post(self.url, data=payload)
-		result = r.json()['ParsedResults'][0]
+		response = requests.post(self.url, data=payload)
+		response.raise_for_status()
+		result = response.json()['ParsedResults'][0]
 		if result['ErrorMessage']:
 			raise APIError(result['ErrorMessage'])
 		return result
@@ -27,8 +28,9 @@ class OCRSpaceAPI(object):
 			'isOverlayRequired': overlay,
 			'apikey': self.key,
 		}
-		r = requests.post(self.url, data=payload, files={'file': fileobj})
-		results = r.json()['ParsedResults']
+		response = requests.post(self.url, data=payload, files={'file': fileobj})
+		response.raise_for_status()
+		results = response.json()['ParsedResults']
 		if results[0]['ErrorMessage']:
 			raise APIError(results[0]['ErrorMessage'])
 		return results
