@@ -2,7 +2,7 @@
 
 ## Goal
 
-Handle documented top-level OCR error responses before indexing ParsedResults. Smallest slice: read the JSON payload once and check IsErroredOnProcessing in each existing method (approximately eight source lines), a local mocked response regression file, and this note. No endpoint, credentials, upload, OCR engine, dependency or public return-shape change.
+Handle documented top-level OCR error responses with absent or empty ParsedResults before indexing that collection. Smallest slice: read the JSON payload once and check IsErroredOnProcessing only when page results are absent/empty in each existing method (approximately eight source lines), a local mocked response regression file, and this note. No endpoint, credentials, upload, OCR engine, dependency or public return-shape change.
 
 ## State
 
@@ -13,11 +13,13 @@ Handle documented top-level OCR error responses before indexing ParsedResults. S
 - All HTTP calls are patched; file inputs are local BytesIO fixtures. No file upload, URL retrieval, API-key validation or OCR request is performed.
 - Red: `python -B -m unittest -v test_ocrspace.py` ran the entire sole suite on CPython3.13.6. Both documented provider-error subcases raised KeyError('ParsedResults') instead of APIError; existing success-shape and per-page-error characterization cases passed (3 tests,2 errors).
 - Green: the same complete sole-suite command passed all3 tests in0.002s after the two method checks. No dependency resolver, build or live API operation was run.
+- Revision red: the new partial-result characterization failed with APIError under the initial unconditional guard. Read-only inspection after an editing-tool context error confirmed both narrowed guards and the new partial/empty-result tests were already applied; they were not applied again. Run the revised four-test sole suite next.
+- Revision green: the complete sole suite now passes all4 tests in0.002s, covering missing/empty error page collections for both methods and preserving successful/partial-result/per-page-error contracts.
 
 ## Decisions and why
 
-Use the existing APIError with the provider's original ErrorMessage before page indexing. Keep existing per-page errors and successful URL single-result/file list returns. Do not introduce a shared response abstraction or change partial-page handling beyond the provider's explicit error flag.
+Use the existing APIError with the provider's original ErrorMessage only when an explicit processing error has no page results. A processing-error flag can accompany partial results; checking it unconditionally would replace the existing page-result contract. Preserve that path, including successful first-page URL results and file lists containing later page errors. Do not introduce a shared response abstraction or broaden per-page error policy.
 
 ## Next step
 
-Inspect and commit only ocrspace.py, test_ocrspace.py and this note, then send the exact patch for coordinator review before publication. Focused mocked tests do not claim live OCR/provider interoperability.
+Coordinator review of initial commit a6617ba found the unconditional flag check changed partial-result behavior. Publication was not authorized. The requested characterization is red/green and both guards are narrowed to absent/empty page results. Commit this revision and return the complete base-to-head diff for review before publication. Focused mocked tests do not claim live OCR/provider interoperability.

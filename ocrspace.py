@@ -19,7 +19,7 @@ class OCRSpaceAPI(object):
 		response = requests.post(self.url, data=payload)
 		response.raise_for_status()
 		response_data = response.json()
-		if response_data.get('IsErroredOnProcessing'):
+		if response_data.get('IsErroredOnProcessing') and not response_data.get('ParsedResults'):
 			raise APIError(response_data.get('ErrorMessage'))
 		result = response_data['ParsedResults'][0]
 		if result['ErrorMessage']:
@@ -34,7 +34,7 @@ class OCRSpaceAPI(object):
 		response = requests.post(self.url, data=payload, files={'file': fileobj})
 		response.raise_for_status()
 		response_data = response.json()
-		if response_data.get('IsErroredOnProcessing'):
+		if response_data.get('IsErroredOnProcessing') and not response_data.get('ParsedResults'):
 			raise APIError(response_data.get('ErrorMessage'))
 		results = response_data['ParsedResults']
 		if results[0]['ErrorMessage']:

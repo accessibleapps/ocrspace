@@ -25,16 +25,19 @@ class OCRSpaceResponseTests(unittest.TestCase):
             "ErrorMessage": messages,
             "ErrorDetails": "",
         }
-        with BytesIO(b"local fixture") as image:
-            calls = (
-                (self.api.OCR_URL, "https://example.test/image.png"),
-                (self.api.OCR_file, image),
-            )
-            for method, argument in calls:
-                with self.subTest(method=method.__name__):
-                    with self.assertRaises(ocrspace.APIError) as caught:
-                        method(argument)
-                    self.assertEqual(caught.exception.args[0], messages)
+        for empty_results in (False, True):
+            if empty_results:
+                self.response.json.return_value["ParsedResults"] = []
+            with BytesIO(b"local fixture") as image:
+                calls = (
+                    (self.api.OCR_URL, "https://example.test/image.png"),
+                    (self.api.OCR_file, image),
+                )
+                for method, argument in calls:
+                    with self.subTest(method=method.__name__, empty_results=empty_results):
+                        with self.assertRaises(ocrspace.APIError) as caught:
+                            method(argument)
+                        self.assertEqual(caught.exception.args[0], messages)
 
     def test_success_retains_url_and_file_return_shapes(self):
         pages = [
@@ -43,6 +46,22 @@ class OCRSpaceResponseTests(unittest.TestCase):
         ]
         self.response.json.return_value = {
             "IsErroredOnProcessing": False, "ParsedResults": pages
+        }
+
+        self.assertEqual(self.api.OCR_URL("https://example.test/image.png"), pages[0])
+        with BytesIO(b"local fixture") as image:
+            self.assertEqual(self.api.OCR_file(image), pages)
+
+    def test_partial_results_keep_existing_page_result_contract(self):
+        pages = [
+            {"ErrorMessage": "", "ParsedText": "first page"},
+            {"ErrorMessage": "page parse failed", "ParsedText": None},
+        ]
+        self.response.json.return_value = {
+            "OCRExitCode": 2,
+            "IsErroredOnProcessing": True,
+            "ErrorMessage": ["A page could not be parsed"],
+            "ParsedResults": pages,
         }
 
         self.assertEqual(self.api.OCR_URL("https://example.test/image.png"), pages[0])
